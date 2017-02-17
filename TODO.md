@@ -1,8 +1,8 @@
-# TODOs for tbacli
+# TODOs for `frc`
 * Implement remaining available API functions -- fetch full team list, awards, etc.
-* Implement colors & formatting
+* Improve colors & formatting
 * Simplify printing process
 * Search for teams by name?
 * Search for events to avoid having to memorize exact keys
-* Pad strings for better-looking data alignment in output
-* GIF in README
+* Switch from a TBA system to a more general FRC tool
+* Better error handling for input omission

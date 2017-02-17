@@ -8,6 +8,7 @@ import (
     "strconv"
     "regexp"
     "time"
+    "github.com/fatih/color"
 
     "github.com/ErikBoesen/tba-go"
 )
@@ -21,14 +22,24 @@ func main() {
     // Subcommands
     teamCommand := flag.NewFlagSet("team", flag.ExitOnError)
     eventCommand := flag.NewFlagSet("event", flag.ExitOnError)
+    matchCommand := flag.NewFlagSet("match", flag.ExitOnError)
 
-    // Team subcommand flags.
-    teamNumber := teamCommand.Int("n", 0, "Team number. (Required)")
-    teamDataPoint := teamCommand.String("d", "", "Data point to display. If unspecified, all team data will be shown.")
+    // Team subcommand flags
+    teamNumber := teamCommand.Int("t", 0, "Team number. (Required)")
+    teamDatum := teamCommand.String("d", "", "Data point to display. If unspecified, all team data will be shown.")
 
-    // Event subcommand flags.
+    // Event subcommand flags
     eventKey := eventCommand.String("k", "", "ID of event you want data on. (Required)")
-    eventDataPoint := eventCommand.String("d", "", "Data point to display. If unspecified, all event data will be shown.")
+    eventDatum := eventCommand.String("d", "", "Data point to display. If unspecified, all event data will be shown.")
+
+    // Match subcommand flags
+    matchKey := matchCommand.String("k", "", "Match key.")
+    matchYear := matchCommand.Int("y", time.Now().Year(), "Year in which match took place.")
+    matchEvent := matchCommand.String("e", "", "Event at which match occurred.")
+    matchLevel := matchCommand.String("t", "", "Type of match. Valid choices include 'qm', 'qf', 'sf', and 'f'.")
+    matchNumber := matchCommand.Int("n", 0, "Match number.")
+    matchRound := matchCommand.Int("r", 0, "Match round (only in playoffs).")
+    matchDatum := matchCommand.String("d", "", "Specific datum to fetch.")
 
     // Verify a subcommand has been provided.
     if len(os.Args) < 2 {
@@ -36,8 +47,14 @@ func main() {
         os.Exit(1)
     }
 
+
+    c := color.New(color.FgCyan, color.Underline)
+    b := color.New(color.FgBlue) // TODO: Bold for team numbers?
+    r := color.New(color.FgRed)
+    g := color.New(color.FgGreen)
+
     // Initialize TBA parser
-    tba, _ := tba.Init("erikboesen", "tbacli", VERSION)
+    tba, _ := tba.Init("erikboesen", "frcli", VERSION)
 
     // Regex to strip URL junk
     urlRE, _ := regexp.Compile("https?://")
@@ -50,6 +67,8 @@ func main() {
         teamCommand.Parse(os.Args[2:])
     case "event":
         eventCommand.Parse(os.Args[2:])
+    case "match":
+        matchCommand.Parse(os.Args[2:])
     default:
         flag.PrintDefaults()
         os.Exit(1)
@@ -69,24 +88,35 @@ func main() {
         // Trim URL fragments from start of event website URL
         team.Website = urlRE.ReplaceAllString(team.Website, "")
 
-        // If user didn't specify a data point, output all of them.
-        if *teamDataPoint == "" {
-            fmt.Printf("\n    Team %d:\n", tk)
-            fmt.Printf("\tNickname: %s\n", team.Nickname)
-            //fmt.Printf("\tName/Sponsors: %s\n", team.Name)
-            fmt.Printf("\tWebsite: %s\n", team.Website)
-            fmt.Printf("\tLocality: %s\n", team.Locality)
-            fmt.Printf("\tRookie Year: %d\n", team.RookieYear)
-            fmt.Printf("\tRegion: %s\n", team.Region)
-            fmt.Printf("\tLocation: %s\n", team.Location)
-            fmt.Printf("\tCountry: %s\n", team.CountryName)
+        // If user didn't specify a datum, output all of them.
+        if *teamDatum == "" {
+            fmt.Printf("\n    ")
+            c.Printf("Team %d:\n", tk)
+            g.Print("\tNickname:     ")
+            fmt.Println(team.Nickname)
+            //g.Printf("\tFull Name:   ")
+            //fmt.Println(team.Name)
+            g.Print("\tWebsite:      ")
+            fmt.Println(team.Website)
+            g.Print("\tLocality:     ")
+            fmt.Println(team.Locality)
+            g.Print("\tRookie Year:  ")
+            fmt.Println(team.RookieYear)
+            g.Print("\tRegion:       ")
+            fmt.Println(team.Region)
+            g.Print("\tLocation:     ")
+            fmt.Println(team.Location)
+            g.Print("\tCountry:      ")
+            fmt.Println(team.CountryName)
+            g.Print("\tMotto:        ")
             if string(team.Motto[0]) == "\"" {
-                fmt.Printf("\tMotto: %s\n\n", team.Motto)
+                fmt.Println(team.Motto)
             } else {
-                fmt.Printf("\tMotto: \"%s\"\n\n", team.Motto)
+                fmt.Printf("\"%s\"", team.Motto)
             }
+            fmt.Println("\n")
         } else {
-            switch strings.ToLower(*teamDataPoint) {
+            switch strings.ToLower(*teamDatum) {
             case "name":
                 fmt.Printf("\n    Team %d's name: %s\n\n", team.TeamNumber, team.Name)
             case "website":
@@ -114,7 +144,7 @@ func main() {
         	case "nickname":
                 fmt.Printf("\n    Team %d's nickname is %s.\n\n", team.TeamNumber, team.Nickname)
             default:
-                fmt.Printf("\n    Invalid data point \"%s\".\n\n", *teamDataPoint)
+                fmt.Printf("\n    Invalid datum \"%s\".\n\n", *teamDatum)
             }
         }
     }
@@ -139,37 +169,46 @@ func main() {
 
         event.VenueAddress = strings.Replace(event.VenueAddress, "\n", ", ", -1)
 
-        if *eventDataPoint == "" {
-            fmt.Printf("\n    %d %s (%s):\n", event.Year, event.Name, event.Key)
-            //fmt.Printf("\tShortname: %s\n", event.ShortName)
+        if *eventDatum == "" {
+            fmt.Printf("\n    ")
+            c.Printf("%d %s (%s):\n", event.Year, event.Name, event.Key)
             if event.StartDate == event.EndDate {
-                fmt.Printf("\tDate: %s\n", event.StartDate)
+                g.Print("\n\tDate: ")
+                fmt.Printf("%s\n", event.StartDate)
             } else {
-                fmt.Printf("\tDates: %s - %s\n", event.StartDate, event.EndDate)
+                g.Print("\tDates: ")
+                fmt.Printf("%s - %s\n", event.StartDate, event.EndDate)
             }
+            g.Print("\tOfficial: ")
             if event.Official {
-                fmt.Println("\tOfficial: Yes")
+                fmt.Println("Yes")
             } else {
-                fmt.Println("\tOfficial: No")
+                fmt.Println("No")
             }
-            fmt.Printf("\tTimezone: %s\n", event.Timezone)
-            fmt.Printf("\tWebsite: %s\n", event.Website)
+            g.Printf("\tTimezone: ")
+            fmt.Println(event.Timezone)
+            g.Printf("\tWebsite: ")
+            fmt.Println(event.Website)
             if event.EventDistrict > 0 {
-                fmt.Printf("\tDistrict: %s (ID %d)\n", event.EventDistrictString, event.EventDistrict)
+                g.Print("\tDistrict: ")
+                fmt.Printf("%s (ID %d)\n", event.EventDistrictString, event.EventDistrict)
             }
-            fmt.Printf("\tLocation: %s\n", event.Location)
-            fmt.Printf("\tAddress: %s\n", event.VenueAddress)
-            fmt.Printf("\tEvent Type: %s (ID %d)\n\n", event.EventTypeString, event.EventType)
+            g.Print("\tLocation: ")
+            fmt.Println(event.Location)
+            g.Print("\tAddress: ")
+            fmt.Println(event.VenueAddress)
+            g.Print("\tEvent Type: ")
+            fmt.Printf("%s (ID %d)\n\n", event.EventTypeString, event.EventType)
         } else {
-            switch strings.ToLower(*eventDataPoint) {
+            switch strings.ToLower(*eventDatum) {
             case "key":
-                fmt.Printf("\n    Event %s's key is %s.\n\n", event.Name, event.Key)
+                fmt.Printf("\n    The %s's key is %s.\n\n", event.Name, event.Key)
             case "name":
-                fmt.Printf("\n    Event %s's full name is %s.\n\n", event.Name, event.Name)
+                fmt.Printf("\n    The event's full name is %s.\n\n", event.Name, event.Name)
             case "shortname":
-                fmt.Printf("\n    Event %s's shortname is %s.\n\n", event.Name, event.ShortName)
+                fmt.Printf("\n    The %s's shortname is %s.\n\n", event.Name, event.ShortName)
             case "website":
-                fmt.Printf("\n    Event %s's website can be found at %s\n\n", event.Name, event.Website)
+                fmt.Printf("\n    The %s's website can be found at %s\n\n", event.Name, event.Website)
             case "date":
             case "dates":
                 if event.StartDate == event.EndDate {
@@ -200,8 +239,105 @@ func main() {
             case "type":
                 fmt.Printf("\n    The %s is a %s (ID %d).\n\n", event.Name, event.EventTypeString, event.EventType)
             default:
-                fmt.Printf("\n    Invalid data point \"%s\".\n\n", *eventDataPoint)
+                fmt.Printf("\n    Invalid datum \"%s\".\n\n", *eventDatum)
             }
+        }
+    }
+    if matchCommand.Parsed() {
+        playoffs := (*matchLevel)[len(*matchLevel)-1] == 'f'
+        mk := ""
+        if *matchKey != "" {
+            mk = *matchKey
+        } else {
+            if playoffs {
+                mk = fmt.Sprintf("%d%s_%dm%d", *matchYear, *matchEvent, *matchLevel, *matchNumber, *matchRound)
+            } else {
+                mk = fmt.Sprintf("%d%s_%s%d", *matchYear, *matchEvent, *matchLevel, *matchNumber)
+            }
+        }
+
+        match, _ := tba.GetMatch(mk)
+
+        matchLevelNames := map[string]string {
+            "qm": "Qualifier",
+            "qf": "Quarterfinal",
+            "sf": "Semifinal",
+            "f": "Final",
+        }
+
+        if match.Key == "" {
+            fmt.Printf("\n    Invalid event key \"%s\".\n\n", mk)
+            os.Exit(1)
+        }
+
+        if *matchDatum == "" {
+            fmt.Printf("\n    ")
+            if playoffs {
+                c.Printf("%s %s #%d, Round %d (%s):\n", strings.ToUpper(match.EventKey), matchLevelNames[match.CompLevel], match.MatchNumber, match.SetNumber, match.Key)
+            } else {
+                c.Printf("%s %s #%d (%s):\n", strings.ToUpper(match.EventKey), matchLevelNames[match.CompLevel], match.MatchNumber, match.Key)
+            }
+            // TODO: Integrate event name into header
+            // TODO: Show score breakdown
+            // Often there will be a time given but no TimeString. This should correct for that.
+            rawTime := time.Unix(int64(match.Time), 0)
+            matchDate := fmt.Sprintf("%d/%d/%d", rawTime.Day(), rawTime.Month(), rawTime.Year())
+            match.TimeString = fmt.Sprintf("%d:%d", rawTime.Hour(), rawTime.Minute())
+            g.Printf("\tDate: ")
+            fmt.Println(matchDate)
+            g.Printf("\tTime: ")
+            fmt.Println(match.TimeString)
+            g.Println("\tTeams: ")
+            for i := 0; i < 3; i++ {
+                rTeam := match.Alliances.Red.Teams[i]
+                bTeam := match.Alliances.Blue.Teams[i]
+                b.Printf("\t\t%s", rTeam[3:len(rTeam)])
+                r.Printf("\t%s\n", bTeam[3:len(bTeam)])
+            }
+            fmt.Println()
+        } else {
+            fmt.Println("Sorry, no datum fetching for matches yet.")
+            /*switch strings.ToLower(*matchDatum) {
+            case "key":
+                fmt.Printf("\n    The %s's key is %s.\n\n", match.Name, match.Key)
+            case "name":
+                fmt.Printf("\n    The match's full name is %s.\n\n", match.Name, match.Name)
+            case "shortname":
+                fmt.Printf("\n    The %s's shortname is %s.\n\n", match.Name, match.ShortName)
+            case "website":
+                fmt.Printf("\n    The %s's website can be found at %s\n\n", match.Name, match.Website)
+            case "date":
+            case "dates":
+                if match.StartDate == match.EndDate {
+                    fmt.Printf("\tThe %s takes place on %s.\n", match.Name, match.StartDate)
+                } else {
+                    fmt.Printf("\tThe %s takes place from %s to %s.\n", match.Name, match.StartDate, match.EndDate)
+                }
+            case "startdate":
+                fmt.Printf("\n    The %s starts on %s.\n\n", match.Name, match.StartDate)
+            case "enddate":
+                fmt.Printf("\n    The %s ends on %s.\n\n", match.Name, match.EndDate)
+            case "official":
+                if match.Official {
+                    fmt.Printf("\n    The %s is an official FIRST match.\n\n", match.Name)
+                } else {
+                    fmt.Printf("\n    The %s is not an official FIRST match.\n\n", match.Name)
+                }
+        	case "district":
+                fmt.Printf("\n    The %s is part of the %s district (ID %d).\n\n", match.Name, match.matchDistrictString, match.matchDistrict)
+        	case "location":
+                fmt.Printf("\n    The %s is based in %s.\n\n", match.Name, match.Location)
+            case "year":
+                fmt.Printf("\n    The %s took place in %d.\n\n", match.Name, match.Year)
+            case "timezone":
+                fmt.Printf("\n    The %s is in the %s timezone.\n\n", match.Name, match.Timezone)
+            case "address":
+                fmt.Printf("\n    The %s took place at %s.\n\n", match.Name, match.VenueAddress)
+            case "type":
+                fmt.Printf("\n    The %s is a %s (ID %d).\n\n", match.Name, match.matchLevelString, match.matchLevel)
+            default:
+                fmt.Printf("\n    Invalid datum \"%s\".\n\n", *matchDatum)
+            }*/
         }
     }
 }

@@ -1,5 +1,8 @@
-# ./tba
-CLI app for getting data from The Blue Alliance.
+# `./frc`
+A helpful CLI app for FRC-related tasks.
+
+* Fetch data from The Blue Alliance
+* More features coming soon
 
 ![Sample screen recording](screen.gif)
 
