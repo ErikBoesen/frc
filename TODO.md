@@ -3,6 +3,8 @@
 * Improve colors & formatting
 * Simplify printing process
 * Search for teams by name?
+* Show score breakdown for matches
 * Search for events to avoid having to memorize exact keys
 * Switch from a TBA system to a more general FRC tool
 * Better error handling for input omission
+* Demo GIF in README

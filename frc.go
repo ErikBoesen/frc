@@ -25,7 +25,7 @@ func main() {
     matchCommand := flag.NewFlagSet("match", flag.ExitOnError)
 
     // Team subcommand flags
-    teamNumber := teamCommand.Int("t", 0, "Team number. (Required)")
+    teamNumber := teamCommand.Int("n", 0, "Team number. (Required)")
     teamDatum := teamCommand.String("d", "", "Data point to display. If unspecified, all team data will be shown.")
 
     // Event subcommand flags
@@ -36,7 +36,7 @@ func main() {
     matchKey := matchCommand.String("k", "", "Match key.")
     matchYear := matchCommand.Int("y", time.Now().Year(), "Year in which match took place.")
     matchEvent := matchCommand.String("e", "", "Event at which match occurred.")
-    matchLevel := matchCommand.String("t", "", "Type of match. Valid choices include 'qm', 'qf', 'sf', and 'f'.")
+    matchLevel := matchCommand.String("l", "", "Event level. Valid choices include 'qm', 'qf', 'sf', and 'f'.")
     matchNumber := matchCommand.Int("n", 0, "Match number.")
     matchRound := matchCommand.Int("r", 0, "Match round (only in playoffs).")
     matchDatum := matchCommand.String("d", "", "Specific datum to fetch.")
@@ -209,7 +209,6 @@ func main() {
                 fmt.Printf("\n    The %s's shortname is %s.\n\n", event.Name, event.ShortName)
             case "website":
                 fmt.Printf("\n    The %s's website can be found at %s\n\n", event.Name, event.Website)
-            case "date":
             case "dates":
                 if event.StartDate == event.EndDate {
                     fmt.Printf("\tThe %s takes place on %s.\n", event.Name, event.StartDate)
@@ -250,7 +249,7 @@ func main() {
             mk = *matchKey
         } else {
             if playoffs {
-                mk = fmt.Sprintf("%d%s_%dm%d", *matchYear, *matchEvent, *matchLevel, *matchNumber, *matchRound)
+                mk = fmt.Sprintf("%d%s_%s%dm%d", *matchYear, *matchEvent, *matchLevel, *matchNumber, *matchRound)
             } else {
                 mk = fmt.Sprintf("%d%s_%s%d", *matchYear, *matchEvent, *matchLevel, *matchNumber)
             }
@@ -270,6 +269,17 @@ func main() {
             os.Exit(1)
         }
 
+        // Often there will be a time given but no TimeString. This should correct for that.
+        rawTime := time.Unix(int64(match.Time), 0)
+        matchDate := fmt.Sprintf("%d/%d/%d", rawTime.Day(), rawTime.Month(), rawTime.Year())
+        min := ""
+        if rawTime.Minute() < 10 {
+            min = fmt.Sprintf("0%d", rawTime.Minute())
+        } else {
+            min = fmt.Sprintf("%d", rawTime.Minute())
+        }
+        match.TimeString = fmt.Sprintf("%d:%s", rawTime.Hour(), min)
+
         if *matchDatum == "" {
             fmt.Printf("\n    ")
             if playoffs {
@@ -279,65 +289,42 @@ func main() {
             }
             // TODO: Integrate event name into header
             // TODO: Show score breakdown
-            // Often there will be a time given but no TimeString. This should correct for that.
-            rawTime := time.Unix(int64(match.Time), 0)
-            matchDate := fmt.Sprintf("%d/%d/%d", rawTime.Day(), rawTime.Month(), rawTime.Year())
-            match.TimeString = fmt.Sprintf("%d:%d", rawTime.Hour(), rawTime.Minute())
             g.Printf("\tDate: ")
             fmt.Println(matchDate)
             g.Printf("\tTime: ")
             fmt.Println(match.TimeString)
             g.Println("\tTeams: ")
+            fmt.Println()
             for i := 0; i < 3; i++ {
                 rTeam := match.Alliances.Red.Teams[i]
                 bTeam := match.Alliances.Blue.Teams[i]
-                b.Printf("\t\t%s", rTeam[3:len(rTeam)])
+                b.Printf("\t    %s    ", rTeam[3:len(rTeam)])
                 r.Printf("\t%s\n", bTeam[3:len(bTeam)])
             }
             fmt.Println()
         } else {
-            fmt.Println("Sorry, no datum fetching for matches yet.")
-            /*switch strings.ToLower(*matchDatum) {
+            switch strings.ToLower(*matchDatum) {
             case "key":
-                fmt.Printf("\n    The %s's key is %s.\n\n", match.Name, match.Key)
-            case "name":
-                fmt.Printf("\n    The match's full name is %s.\n\n", match.Name, match.Name)
-            case "shortname":
-                fmt.Printf("\n    The %s's shortname is %s.\n\n", match.Name, match.ShortName)
-            case "website":
-                fmt.Printf("\n    The %s's website can be found at %s\n\n", match.Name, match.Website)
+                fmt.Printf("\n    The match's key is %s.\n\n", match.Key)
+            case "matchnumber":
+                fmt.Printf("\n    Match %s's number is %d.\n\n", match.Key, match.MatchNumber)
+            case "video":
+                if (match.Videos[0].Type == "youtube") {
+                    fmt.Printf("\n    A video of match %s can be found at https://youtube.com/watch?v=%s.\n\n", match.Key, match.Videos[0].Key)
+                }
+            case "time":
+                fmt.Printf("\n    Match %s took place at %s on %s (Timestamp %d)\n\n", match.Key, match.TimeString, matchDate, match.Time)
             case "date":
-            case "dates":
-                if match.StartDate == match.EndDate {
-                    fmt.Printf("\tThe %s takes place on %s.\n", match.Name, match.StartDate)
-                } else {
-                    fmt.Printf("\tThe %s takes place from %s to %s.\n", match.Name, match.StartDate, match.EndDate)
-                }
-            case "startdate":
-                fmt.Printf("\n    The %s starts on %s.\n\n", match.Name, match.StartDate)
-            case "enddate":
-                fmt.Printf("\n    The %s ends on %s.\n\n", match.Name, match.EndDate)
-            case "official":
-                if match.Official {
-                    fmt.Printf("\n    The %s is an official FIRST match.\n\n", match.Name)
-                } else {
-                    fmt.Printf("\n    The %s is not an official FIRST match.\n\n", match.Name)
-                }
-        	case "district":
-                fmt.Printf("\n    The %s is part of the %s district (ID %d).\n\n", match.Name, match.matchDistrictString, match.matchDistrict)
-        	case "location":
-                fmt.Printf("\n    The %s is based in %s.\n\n", match.Name, match.Location)
-            case "year":
-                fmt.Printf("\n    The %s took place in %d.\n\n", match.Name, match.Year)
-            case "timezone":
-                fmt.Printf("\n    The %s is in the %s timezone.\n\n", match.Name, match.Timezone)
-            case "address":
-                fmt.Printf("\n    The %s took place at %s.\n\n", match.Name, match.VenueAddress)
-            case "type":
-                fmt.Printf("\n    The %s is a %s (ID %d).\n\n", match.Name, match.matchLevelString, match.matchLevel)
+                fmt.Printf("\t    Match %s took place on %s.\n", match.Key, matchDate)
+            case "round":
+                fmt.Printf("\n    Match %s is set number/round #%d.\n\n", match.Key, match.SetNumber)
+        	case "teams":
+                fmt.Printf("\n    In match %s, the red alliance was composed of %s, %s, and %s. The blue alliance was composed of %s, %s, and %s.", match.Alliances.Red.Teams[0], match.Alliances.Red.Teams[1], match.Alliances.Red.Teams[2], match.Alliances.Blue.Teams[0], match.Alliances.Blue.Teams[1], match.Alliances.Blue.Teams[2])
+            case "event":
+                fmt.Printf("\n    Match %s took place at event %s.\n\n", match.Key, match.EventKey)
             default:
                 fmt.Printf("\n    Invalid datum \"%s\".\n\n", *matchDatum)
-            }*/
+            }
         }
     }
 }
