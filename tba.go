@@ -9,7 +9,7 @@ import (
     "regexp"
     "time"
 
-    "github.com/ErikBoesen/tba"
+    "github.com/ErikBoesen/tba-go"
 )
 
 const (
