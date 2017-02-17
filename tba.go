@@ -140,7 +140,7 @@ func main() {
         event.VenueAddress = strings.Replace(event.VenueAddress, "\n", ", ", -1)
 
         if *eventDataPoint == "" {
-            fmt.Printf("\n    %d %s (%s):\n\n", event.Year, event.Name, event.Key)
+            fmt.Printf("\n    %d %s (%s):\n", event.Year, event.Name, event.Key)
             //fmt.Printf("\tShortname: %s\n", event.ShortName)
             if event.StartDate == event.EndDate {
                 fmt.Printf("\tDate: %s\n", event.StartDate)

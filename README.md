@@ -1,6 +1,8 @@
 # ./tba
 CLI app for getting data from The Blue Alliance.
 
+![Sample screen recording](screen.gif)
+
 ## Compiling
 * Clone the repository and `cd` into it
 * Build the executable:
