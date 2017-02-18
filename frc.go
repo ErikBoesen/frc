@@ -287,21 +287,42 @@ func main() {
             } else {
                 c.Printf("%s %s #%d (%s):\n", strings.ToUpper(match.EventKey), matchLevelNames[match.CompLevel], match.MatchNumber, match.Key)
             }
-            // TODO: Integrate event name into header
-            // TODO: Show score breakdown
-            g.Printf("\tDate: ")
-            fmt.Println(matchDate)
-            g.Printf("\tTime: ")
-            fmt.Println(match.TimeString)
-            g.Println("\tTeams: ")
-            fmt.Println()
+            // Once in a while a
+            if match.Time > 0 {
+                g.Printf("\tDate: ")
+                fmt.Println(matchDate)
+                g.Printf("\tTime: ")
+                fmt.Println(match.TimeString)
+            }
+            g.Println("\tAlliances:\n")
+            if match.Alliances.Red.Score > match.Alliances.Blue.Score {
+                r.Printf("\t 🏆  ")
+            } else {
+                r.Printf("\t    ")
+            }
             for i := 0; i < 3; i++ {
                 rTeam := match.Alliances.Red.Teams[i]
-                bTeam := match.Alliances.Blue.Teams[i]
-                b.Printf("\t    %s    ", rTeam[3:len(rTeam)])
-                r.Printf("\t%s\n", bTeam[3:len(bTeam)])
+                r.Printf("%s", rTeam[3:len(rTeam)])
+                if i < 2 {
+                    r.Print(" | ")
+                }
             }
-            fmt.Println()
+            r.Printf(" => %d points\n", match.Alliances.Red.Score)
+            if match.Alliances.Red.Score < match.Alliances.Blue.Score {
+                b.Printf("\t 🏆  ")
+            } else {
+                b.Printf("\t    ")
+            }
+            for i := 0; i < 3; i++ {
+                bTeam := match.Alliances.Blue.Teams[i]
+                b.Printf("%s", bTeam[3:len(bTeam)])
+                if i < 2 {
+                    b.Print(" | ")
+                }
+            }
+            b.Printf(" => %d points\n\n", match.Alliances.Blue.Score)
+
+            // TODO: Full score breakdown
         } else {
             switch strings.ToLower(*matchDatum) {
             case "key":
