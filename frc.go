@@ -47,7 +47,6 @@ func main() {
         os.Exit(1)
     }
 
-
     c := color.New(color.FgCyan, color.Underline)
     b := color.New(color.FgBlue) // TODO: Bold for team numbers?
     r := color.New(color.FgRed)
@@ -108,13 +107,15 @@ func main() {
             fmt.Println(team.Location)
             g.Print("\tCountry:      ")
             fmt.Println(team.CountryName)
-            g.Print("\tMotto:        ")
-            if string(team.Motto[0]) == "\"" {
-                fmt.Println(team.Motto)
-            } else {
-                fmt.Printf("\"%s\"", team.Motto)
+            if len(team.Motto) > 0 {
+                g.Print("\tMotto:        ")
+                if string(team.Motto[0]) == "\"" {
+                    fmt.Println(team.Motto)
+                } else {
+                    fmt.Printf("\"%s\"\n", team.Motto)
+                }
             }
-            fmt.Println("\n")
+            fmt.Println()
         } else {
             switch strings.ToLower(*teamDatum) {
             case "name":
