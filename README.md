@@ -44,7 +44,7 @@ frc event -k 2013cmp
 * Get a specific data point about an event:
 
 ```bash
-frc event -k new -d type # => The Newton Division is a Championship Division (ID 3).
+frc event -k new -d official # => The Newton Division is an official FIRST event.
 ```
 
 * To get match data, there are two methods; by key

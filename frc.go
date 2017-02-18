@@ -211,9 +211,9 @@ func main() {
                 fmt.Printf("\n    The %s's website can be found at %s\n\n", event.Name, event.Website)
             case "dates":
                 if event.StartDate == event.EndDate {
-                    fmt.Printf("\tThe %s takes place on %s.\n", event.Name, event.StartDate)
+                    fmt.Printf("\n    The %s takes place on %s.\n\n", event.Name, event.StartDate)
                 } else {
-                    fmt.Printf("\tThe %s takes place from %s to %s.\n", event.Name, event.StartDate, event.EndDate)
+                    fmt.Printf("\n    The %s takes place from %s to %s.\n\n", event.Name, event.StartDate, event.EndDate)
                 }
             case "startdate":
                 fmt.Printf("\n    The %s starts on %s.\n\n", event.Name, event.StartDate)
