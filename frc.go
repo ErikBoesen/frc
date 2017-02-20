@@ -17,6 +17,19 @@ const (
     VERSION = "0.1.0"
 )
 
+var c = color.New(color.FgCyan, color.Underline)
+var b = color.New(color.FgBlue) // TODO: Bold for team numbers?
+var r = color.New(color.FgRed)
+var g = color.New(color.FgGreen)
+
+
+var matchLevelNames = map[string]string {
+    "qm": "Qualifier",
+    "qf": "Quarterfinal",
+    "sf": "Semifinal",
+    "f": "Final",
+}
+
 
 func main() {
     // Subcommands
@@ -46,11 +59,6 @@ func main() {
         fmt.Println("Error: subcommand is required.")
         os.Exit(1)
     }
-
-    c := color.New(color.FgCyan, color.Underline)
-    b := color.New(color.FgBlue) // TODO: Bold for team numbers?
-    r := color.New(color.FgRed)
-    g := color.New(color.FgGreen)
 
     // Initialize TBA parser
     tba, _ := tba.Init("erikboesen", "frcli", VERSION)
@@ -82,7 +90,10 @@ func main() {
         // Fetch team data
         team, _ := tba.GetTeam(tk)
 
-        // TODO: Catch nonexistent teams
+        if team.Key == "" {
+            fmt.Printf("\n    Invalid event key \"%s\".\n\n", tk)
+            os.Exit(1)
+        }
 
         // Trim URL fragments from start of event website URL
         team.Website = urlRE.ReplaceAllString(team.Website, "")
@@ -244,12 +255,11 @@ func main() {
         }
     }
     if matchCommand.Parsed() {
-        playoffs := (*matchLevel)[len(*matchLevel)-1] == 'f'
         mk := ""
         if *matchKey != "" {
             mk = *matchKey
         } else {
-            if playoffs {
+            if (*matchLevel)[len(*matchLevel)-1] == 'f' {
                 mk = fmt.Sprintf("%d%s_%s%dm%d", *matchYear, *matchEvent, *matchLevel, *matchNumber, *matchRound)
             } else {
                 mk = fmt.Sprintf("%d%s_%s%d", *matchYear, *matchEvent, *matchLevel, *matchNumber)
@@ -257,13 +267,6 @@ func main() {
         }
 
         match, _ := tba.GetMatch(mk)
-
-        matchLevelNames := map[string]string {
-            "qm": "Qualifier",
-            "qf": "Quarterfinal",
-            "sf": "Semifinal",
-            "f": "Final",
-        }
 
         if match.Key == "" {
             fmt.Printf("\n    Invalid event key \"%s\".\n\n", mk)
@@ -282,46 +285,7 @@ func main() {
         match.TimeString = fmt.Sprintf("%d:%s", rawTime.Hour(), min)
 
         if *matchDatum == "" {
-            fmt.Printf("\n    ")
-            if playoffs {
-                c.Printf("%s %s #%d, Round %d (%s):\n", strings.ToUpper(match.EventKey), matchLevelNames[match.CompLevel], match.MatchNumber, match.SetNumber, match.Key)
-            } else {
-                c.Printf("%s %s #%d (%s):\n", strings.ToUpper(match.EventKey), matchLevelNames[match.CompLevel], match.MatchNumber, match.Key)
-            }
-            // Once in a while a
-            if match.Time > 0 {
-                g.Printf("\tDate: ")
-                fmt.Println(matchDate)
-                g.Printf("\tTime: ")
-                fmt.Println(match.TimeString)
-            }
-            g.Println("\tAlliances:\n")
-            if match.Alliances.Red.Score > match.Alliances.Blue.Score {
-                r.Printf("\t 🏆  ")
-            } else {
-                r.Printf("\t    ")
-            }
-            for i := 0; i < 3; i++ {
-                rTeam := match.Alliances.Red.Teams[i]
-                r.Printf("%s", rTeam[3:len(rTeam)])
-                if i < 2 {
-                    r.Print(" | ")
-                }
-            }
-            r.Printf(" => %d points\n", match.Alliances.Red.Score)
-            if match.Alliances.Red.Score < match.Alliances.Blue.Score {
-                b.Printf("\t 🏆  ")
-            } else {
-                b.Printf("\t    ")
-            }
-            for i := 0; i < 3; i++ {
-                bTeam := match.Alliances.Blue.Teams[i]
-                b.Printf("%s", bTeam[3:len(bTeam)])
-                if i < 2 {
-                    b.Print(" | ")
-                }
-            }
-            b.Printf(" => %d points\n\n", match.Alliances.Blue.Score)
+            PrintMatch(match)
 
             // TODO: Full score breakdown
         } else {
@@ -349,4 +313,45 @@ func main() {
             }
         }
     }
+}
+
+func PrintMatch(match tba.Match) {
+    fmt.Printf("\n    ")
+    if (match.CompLevel)[len(match.CompLevel)-1] == 'f' {
+        c.Printf("%s %s #%d, Round %d (%s):\n", strings.ToUpper(match.EventKey), matchLevelNames[match.CompLevel], match.MatchNumber, match.SetNumber, match.Key)
+    } else {
+        c.Printf("%s %s #%d (%s):\n", strings.ToUpper(match.EventKey), matchLevelNames[match.CompLevel], match.MatchNumber, match.Key)
+    }
+    // Once in a while a
+    if match.Time > 0 {
+        g.Printf("\tDate/Time: ")
+        fmt.Println(match.TimeString)
+    }
+    g.Println("\tAlliances:\n")
+    if match.Alliances.Red.Score > match.Alliances.Blue.Score {
+        r.Printf("\t 🏆  ")
+    } else {
+        r.Printf("\t    ")
+    }
+    for i := 0; i < 3; i++ {
+        rTeam := match.Alliances.Red.Teams[i]
+        r.Printf("%s", rTeam[3:len(rTeam)])
+        if i < 2 {
+            r.Print(" | ")
+        }
+    }
+    r.Printf(" => %d points\n", match.Alliances.Red.Score)
+    if match.Alliances.Red.Score < match.Alliances.Blue.Score {
+        b.Printf("\t 🏆  ")
+    } else {
+        b.Printf("\t    ")
+    }
+    for i := 0; i < 3; i++ {
+        bTeam := match.Alliances.Blue.Teams[i]
+        b.Printf("%s", bTeam[3:len(bTeam)])
+        if i < 2 {
+            b.Print(" | ")
+        }
+    }
+    b.Printf(" => %d points\n\n", match.Alliances.Blue.Score)
 }
