@@ -173,7 +173,7 @@ func main() {
 
 func PrintTeam(team tbago.Team) {
     fmt.Printf("\n    ")
-    c.Printf("Team %d:\n", team.Key)
+    c.Printf("Team %d:\n", team.TeamNumber)
     g.Print("\tNickname:     ")
     fmt.Println(team.Nickname)
     //g.Printf("\tFull Name:   ")
