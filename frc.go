@@ -15,18 +15,12 @@ import (
 const VERSION = "0.1.0"
 
 // Used for printing in color
-var c = color.New(color.FgCyan, color.Underline)
-var b = color.New(color.FgBlue)
-var r = color.New(color.FgRed)
-var g = color.New(color.FgGreen)
-
-// Nicer names for match levels.
-var matchLevelNames = map[string]string {
-    "qm": "Qualifier",
-    "qf": "Quarterfinal",
-    "sf": "Semifinal",
-    "f": "Final",
-}
+var (
+    c = color.New(color.FgCyan, color.Underline)
+    b = color.New(color.FgBlue)
+    r = color.New(color.FgRed)
+    g = color.New(color.FgGreen)
+)
 
 
 func main() {
@@ -138,12 +132,10 @@ func main() {
             ek = fmt.Sprintf("%d%s", time.Now().Year(), *eventKey)
         }
 
-        var matches []tbago.Match
-
         if *eventMatchesTeam == 0 {
-            matches, _ = tba.GetEventMatches(ek)
+            matches, err := tba.GetEventMatches(ek)
         } else {
-            matches, _ = tba.GetTeamEventMatches(*eventMatchesTeam, ek)
+            matches, err := tba.GetTeamEventMatches(*eventMatchesTeam, ek)
         }
 
         if len(matches) == 0 {
@@ -151,8 +143,8 @@ func main() {
             os.Exit(1)
         }
 
-        for i := 0; i < len(matches); i++ {
-            PrintMatch(matches[i])
+        for _, match := range matches {
+            PrintMatch(match)
         }
     }
 }
@@ -162,8 +154,6 @@ func PrintTeam(team tbago.Team) {
     c.Printf("Team %d:\n", team.TeamNumber)
     g.Print("\tNickname:     ")
     fmt.Println(team.Nickname)
-    //g.Printf("\tFull Name:   ")
-    //fmt.Println(team.Name)
     g.Print("\tWebsite:      ")
     fmt.Println(team.Website)
     g.Print("\tLocality:     ")
@@ -176,14 +166,8 @@ func PrintTeam(team tbago.Team) {
     fmt.Println(team.Location)
     g.Print("\tCountry:      ")
     fmt.Println(team.CountryName)
-    if len(team.Motto) > 0 {
-        g.Print("\tMotto:        ")
-        if string(team.Motto[0]) == "\"" {
-            fmt.Println(team.Motto)
-        } else {
-            fmt.Printf("\"%s\"\n", team.Motto)
-        }
-    }
+    g.Print("\tMotto:        ")
+    fmt.Println(team.Motto)
     fmt.Println()
 }
 
@@ -220,27 +204,21 @@ func PrintEvent(event tbago.Event) {
 }
 
 func PrintMatch(match tbago.Match) {
-    // Often there will be a time given but no TimeString. This should correct for that.
-    rawTime := time.Unix(int64(match.Time), 0)
-    matchDate := fmt.Sprintf("%d/%d/%d", rawTime.Day(), rawTime.Month(), rawTime.Year())
-    min := ""
-    if rawTime.Minute() < 10 {
-        min = fmt.Sprintf("0%d", rawTime.Minute())
-    } else {
-        min = fmt.Sprintf("%d", rawTime.Minute())
+    levels := map[string]string {
+        "qm": "Qualifier",
+        "qf": "Quarterfinal",
+        "sf": "Semifinal",
+        "f": "Final",
     }
-    match.TimeString = fmt.Sprintf("%s at %d:%s", matchDate, rawTime.Hour(), min)
-
     fmt.Printf("\n    ")
-    if (match.CompLevel)[len(match.CompLevel)-1] == 'f' {
-        c.Printf("%s %s #%d, Round %d (%s):\n", strings.ToUpper(match.EventKey), matchLevelNames[match.CompLevel], match.MatchNumber, match.SetNumber, match.Key)
+    if match.CompLevel == "qm" {
+        c.Printf("%s %s #%d (%s):\n", strings.ToUpper(match.EventKey), levels[match.CompLevel], match.MatchNumber, match.Key)
     } else {
-        c.Printf("%s %s #%d (%s):\n", strings.ToUpper(match.EventKey), matchLevelNames[match.CompLevel], match.MatchNumber, match.Key)
+        c.Printf("%s %s #%d, Round %d (%s):\n", strings.ToUpper(match.EventKey), levels[match.CompLevel], match.MatchNumber, match.SetNumber, match.Key)
     }
-    // Once in a while a
     if match.Time > 0 {
         g.Printf("\tDate/Time: ")
-        fmt.Println(match.TimeString)
+        fmt.Println(time.Unix(match.Time, 0).Format("06/01/02 at 15:01"))
     }
     g.Println("\tAlliances:\n")
     if match.Alliances.Red.Score > match.Alliances.Blue.Score {
@@ -248,10 +226,9 @@ func PrintMatch(match tbago.Match) {
     } else {
         r.Printf("\t    ")
     }
-    for i := 0; i < 3; i++ {
-        rTeam := match.Alliances.Red.Teams[i]
-        r.Printf("%s", rTeam[3:len(rTeam)])
-        if i < 2 {
+    for index, team := range match.Alliances.Red.Teams {
+        r.Printf("%s", team[3:len(team)])
+        if index < 2 {
             r.Print(" | ")
         }
     }
@@ -261,11 +238,10 @@ func PrintMatch(match tbago.Match) {
     } else {
         b.Printf("\t    ")
     }
-    for i := 0; i < 3; i++ {
-        bTeam := match.Alliances.Blue.Teams[i]
-        b.Printf("%s", bTeam[3:len(bTeam)])
-        if i < 2 {
-            b.Print(" | ")
+    for index, team := range match.Alliances.Blue.Teams {
+        b.Printf("%s", team[3:len(team)])
+        if index < 2 {
+            r.Print(" | ")
         }
     }
     b.Printf(" => %d points\n\n", match.Alliances.Blue.Score)
