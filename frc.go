@@ -6,7 +6,6 @@ import (
     "os"
     "strings"
     "strconv"
-    "regexp"
     "time"
     "github.com/fatih/color"
 
@@ -64,9 +63,6 @@ func main() {
     // Initialize TBA parser
     tba, _ := tbago.Init("erikboesen", "frcli", VERSION)
 
-    // Regex to strip URL junk
-    urlRE, _ := regexp.Compile("https?://")
-
     // Parse flags for appropriate FlagSet
     // FlagSet.Parse() requires a set of arguments to parse as input
     // os.Args[2:] will be all arguments starting after the subcommand at os.Args[1]
@@ -96,9 +92,6 @@ func main() {
             os.Exit(1)
         }
 
-        // Trim URL fragments from start of event website URL
-        team.Website = urlRE.ReplaceAllString(team.Website, "")
-
         PrintTeam(team)
     } else if eventCommand.Parsed() {
         ek := *eventKey
@@ -112,9 +105,6 @@ func main() {
             fmt.Fprintf(os.Stderr, "Invalid event key '%s'.\n", ek)
             os.Exit(1)
         }
-
-        // Trim URL fragments from start of event website URL
-        event.Website = urlRE.ReplaceAllString(event.Website, "")
 
         event.StartDate = strings.Replace(event.StartDate, "-", "/", -1)
         event.EndDate = strings.Replace(event.EndDate, "-", "/", -1)
