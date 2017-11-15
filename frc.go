@@ -13,13 +13,11 @@ import (
     tbago "github.com/ErikBoesen/tba-go"
 )
 
-const (
-    VERSION = "0.1.0"
-)
+const VERSION = "0.1.0"
 
 // Used for printing in color
 var c = color.New(color.FgCyan, color.Underline)
-var b = color.New(color.FgBlue) // TODO: Bold for team numbers?
+var b = color.New(color.FgBlue)
 var r = color.New(color.FgRed)
 var g = color.New(color.FgGreen)
 
@@ -49,7 +47,7 @@ func main() {
     matchKey := matchCommand.String("k", "", "Match key.")
     matchYear := matchCommand.Int("y", time.Now().Year(), "Year in which match took place.")
     matchEvent := matchCommand.String("e", "", "Event at which match occurred.")
-    matchLevel := matchCommand.String("l", "", "Event level. Valid choices include 'qm', 'qf', 'sf', and 'f'.")
+    matchLevel := matchCommand.String("l", "", "Event level (qm, qf, sf, or f).")
     matchNumber := matchCommand.Int("n", 0, "Match number.")
     matchRound := matchCommand.Int("r", 0, "Match round (only in playoffs).")
 
@@ -59,7 +57,7 @@ func main() {
 
     // Verify a subcommand has been provided.
     if len(os.Args) < 2 {
-        fmt.Println("Error: subcommand is required.")
+        fmt.Fprintln(os.Stderr, "Error: subcommand is required.")
         os.Exit(1)
     }
 
@@ -86,17 +84,15 @@ func main() {
         os.Exit(1)
     }
 
-    // Check which subcommand was Parsed using the FlagSet.Parsed() function; then handle each case accordingly.
-    // FlagSet.Parse() will evaluate to false if no flags were parsed (i.e. the user didn't provide any flags).
     if teamCommand.Parsed() {
         // Team key
         tk := *teamNumber
 
         // Fetch team data
-        team, _ := tba.GetTeam(tk)
+        team, err := tba.GetTeam(tk)
 
-        if team.Key == "" {
-            fmt.Printf("\n    Invalid event key \"%s\".\n\n", tk)
+        if err != nil {
+            fmt.Fprintf(os.Stderr, "Invalid team key '%d'.\n", tk)
             os.Exit(1)
         }
 
@@ -110,10 +106,10 @@ func main() {
             ek = fmt.Sprintf("%d%s", time.Now().Year(), *eventKey)
         }
 
-        event, _ := tba.GetEvent(ek)
+        event, err := tba.GetEvent(ek)
 
-        if event.Key == "" {
-            fmt.Printf("\n    Invalid event key \"%s\".\n\n", ek)
+        if err != nil {
+            fmt.Fprintf(os.Stderr, "Invalid event key '%s'.\n", ek)
             os.Exit(1)
         }
 
@@ -138,10 +134,10 @@ func main() {
             }
         }
 
-        match, _ := tba.GetMatch(mk)
+        match, err := tba.GetMatch(mk)
 
-        if match.Key == "" {
-            fmt.Printf("\n    Invalid event key \"%s\".\n\n", mk)
+        if err != nil {
+            fmt.Fprintf(os.Stderr, "Invalid event key '%s'.\n", mk)
             os.Exit(1)
         }
 
@@ -161,7 +157,7 @@ func main() {
         }
 
         if len(matches) == 0 {
-            fmt.Printf("\n    Invalid event key \"%s\".\n\n", ek)
+            fmt.Fprintf(os.Stderr, "No matches found for event '%s'.\n", ek)
             os.Exit(1)
         }
 
