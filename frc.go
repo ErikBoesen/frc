@@ -83,7 +83,7 @@ func main() {
             log.Fatal(err)
         }
 
-        PrintTeam(team)
+        DisplayTeam(team)
     } else if eventCommand.Parsed() {
         ek := *eventKey
         if _, err := strconv.Atoi(string((*eventKey)[0])); err != nil {
@@ -100,16 +100,16 @@ func main() {
 
         event.VenueAddress = strings.Replace(event.VenueAddress, "\n", ", ", -1)
 
-        PrintEvent(event)
+        DisplayEvent(event)
     } else if matchCommand.Parsed() {
         mk := ""
         if *matchKey != "" {
             mk = *matchKey
         } else {
-            if (*matchLevel)[len(*matchLevel)-1] == 'f' {
-                mk = fmt.Sprintf("%d%s_%s%dm%d", *matchYear, *matchEvent, *matchLevel, *matchNumber, *matchRound)
-            } else {
+            if *matchLevel == "qm" {
                 mk = fmt.Sprintf("%d%s_%s%d", *matchYear, *matchEvent, *matchLevel, *matchNumber)
+            } else {
+                mk = fmt.Sprintf("%d%s_%s%dm%d", *matchYear, *matchEvent, *matchLevel, *matchNumber, *matchRound)
             }
         }
 
@@ -118,7 +118,7 @@ func main() {
             log.Fatal(err)
         }
 
-        PrintMatch(match)
+        DisplayMatch(match)
     } else if eventMatchesCommand.Parsed() {
         ek := *eventMatchesKey
         if _, err := strconv.Atoi(string((*eventMatchesKey)[0])); err != nil {
@@ -139,12 +139,12 @@ func main() {
         }
 
         for _, match := range matches {
-            PrintMatch(match)
+            DisplayMatch(match)
         }
     }
 }
 
-func Display(header string, titles []string, data []interface{}) {
+func ListInfo(header string, titles []string, data []interface{}) {
     fmt.Printf("\n    ")
     c.Printf("%s:\n", header)
     for i := range titles {
@@ -154,24 +154,24 @@ func Display(header string, titles []string, data []interface{}) {
     fmt.Println()
 }
 
-func PrintTeam(team tbago.Team) {
+func DisplayTeam(team tbago.Team) {
     header := fmt.Sprintf("Team %d", team.TeamNumber)
     titles := []string{"Nickname", "Website", "Rookie", "Region", "Location", "Country", "Motto"}
     data   := []interface{}{team.Nickname, team.Website, team.RookieYear, team.Region, team.Location, team.CountryName, team.Motto}
-    Display(header, titles, data)
+    ListInfo(header, titles, data)
 }
 
-func PrintEvent(event tbago.Event) {
+func DisplayEvent(event tbago.Event) {
     header := fmt.Sprintf("%d %s (%s)", event.Year, event.Name, event.Key)
     if !event.Official {
         header += "(Unofficial)"
     }
-    titles := []string{"Date", "Timezone", "Website", "Location", "Address", "District", "Event Type"}
+    titles := []string{"Date", "Timezone", "Website", "Location", "Address", "District", "Type"}
     data   := []interface{}{fmt.Sprintf("%s - %s", event.StartDate, event.EndDate), event.Timezone, event.Website, event.Location, event.VenueAddress, event.EventDistrictString, fmt.Sprintf("%s (ID %d)", event.EventTypeString, event.EventType)}
-    Display(header, titles, data)
+    ListInfo(header, titles, data)
 }
 
-func PrintMatch(match tbago.Match) {
+func DisplayMatch(match tbago.Match) {
     header := fmt.Sprintf("%s %s #%d", strings.ToUpper(match.EventKey), strings.ToUpper(match.CompLevel), match.MatchNumber)
     if match.CompLevel == "qm" {
         header += fmt.Sprintf(" (%s)", match.Key)
@@ -180,7 +180,7 @@ func PrintMatch(match tbago.Match) {
     }
     titles := []string{"Date/Time", "Alliances"}
     data   := []interface{}{time.Unix(int64(match.Time), 0).Format("06/01/02 at 15:01"), ""}
-    Display(header, titles, data)
+    ListInfo(header, titles, data)
 
     if match.Alliances.Red.Score > match.Alliances.Blue.Score {
         r.Printf("\t 🏆  ")
