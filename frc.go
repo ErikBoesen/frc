@@ -3,14 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/willf/pad"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
+	"github.com/willf/pad"
 	"github.com/frc1418/tbago"
 )
 

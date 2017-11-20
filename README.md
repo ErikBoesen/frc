@@ -60,7 +60,7 @@ frc match -y 2017 -e mokc -l qm -n 23
 ```
 
 ## Licensing
-This software is available under the terms of the [MIT License](LICENSE).
+This software is available under the terms of the [BSD License](LICENSE).
 
 ## Authors
 * [Erik Boesen](https://github.com/ErikBoesen)
