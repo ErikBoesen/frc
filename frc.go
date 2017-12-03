@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -9,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/urfave/cli"
 	"github.com/fatih/color"
 	"github.com/willf/pad"
 	"github.com/frc1418/tbago"
@@ -25,120 +25,107 @@ var (
 )
 
 func main() {
-	// First-level subcommands.
-	teamCommand := flag.NewFlagSet("team", flag.ExitOnError)
-	eventCommand := flag.NewFlagSet("event", flag.ExitOnError)
-	matchCommand := flag.NewFlagSet("match", flag.ExitOnError)
-	eventMatchesCommand := flag.NewFlagSet("eventmatches", flag.ExitOnError)
-
-	// Team subcommand flags.
-	teamNumber := teamCommand.Int("n", 0, "Team number. (Required)")
-
-	// Event subcommand flags.
-	eventKey := eventCommand.String("k", "", "ID of event you want data on. (Required)")
-
-	// Match subcommand flags.
-	matchKey := matchCommand.String("k", "", "Match key.")
-	matchYear := matchCommand.Int("y", time.Now().Year(), "Year in which match took place.")
-	matchEvent := matchCommand.String("e", "", "Event at which match occurred.")
-	matchLevel := matchCommand.String("l", "", "Event level (qm, qf, sf, or f).")
-	matchNumber := matchCommand.Int("n", 0, "Match number.")
-	matchRound := matchCommand.Int("r", 0, "Match round (only in playoffs).")
-
-	// Event matches subcommand flags.
-	eventMatchesKey := eventMatchesCommand.String("k", "", "Key of event whose matches you desire. (Required)")
-	eventMatchesTeam := eventMatchesCommand.Int("t", 0, "Number of team whose matches you want to show.")
-
-	// Verify a subcommand has been provided.
-	if len(os.Args) < 2 {
-		log.Fatal("Subcommand is required.")
-	}
-
 	// Initialize TBA parser
 	tba, err := tbago.New(KEY)
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	switch os.Args[1] {
-	case "team":
-		teamCommand.Parse(os.Args[2:])
-	case "event":
-		eventCommand.Parse(os.Args[2:])
-	case "match":
-		matchCommand.Parse(os.Args[2:])
-	case "eventmatches":
-		eventMatchesCommand.Parse(os.Args[2:])
-	default:
-		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
-	if teamCommand.Parsed() {
-		tk := *teamNumber
+	app := cli.NewApp()
+	app.Name = "frc"
+	app.Usage = "handle FRC-related tasks in the command line."
+	app.EnableBashCompletion = true
+	app.Commands = []cli.Command{
+		{
+			Name: "team",
+			Aliases: []string{"t"},
+			Usage: "Get data on a team",
+			Action: func(c *cli.Context) error {
+				if !c.Args().Present() {
+					log.Fatal("Usage: " + c.Command.Usage)
+				}
+				num, err := strconv.Atoi(c.Args()[0])
+				if err != nil {
+					log.Fatal("Invalid team number.\n")
+					os.Exit(1)
+				}
+				team, err := tba.Team(num).Get()
+				if err != nil {
+					log.Fatal("TBA request unsuccessful.\n")
+					os.Exit(1)
+				}
+				DisplayTeam(team)
+				return nil
+			},
+		},
+		{
+			Name: "event",
+			Aliases: []string{"e"},
+			Usage: "Get data on an event",
+			Action: func(c *cli.Context) error {
+				if !c.Args().Present() {
+					log.Fatal("Usage: " + c.Command.Usage)
+					os.Exit(1)
+				}
 
-		team, err := tba.Team(tk).Get()
-		if err != nil {
-			log.Fatal(err)
-		}
+				event, err := tba.Event(c.Args()[0]).Get()
+				if err != nil {
+					log.Fatal("Invalid event key or failed TBA request.\n")
+					os.Exit(1)
+				}
 
-		DisplayTeam(team)
-	} else if eventCommand.Parsed() {
-		ek := *eventKey
-		if _, err := strconv.Atoi(string((*eventKey)[0])); err != nil {
-			ek = fmt.Sprintf("%d%s", time.Now().Year(), *eventKey)
-		}
+				DisplayEvent(event)
+				return nil
+			},
+		},
+		{
+			Name: "match",
+			Aliases: []string{"m"},
+			Usage: "Get data on a match",
+			Action: func(c *cli.Context) error {
+				match, err := tba.Match(c.Args()[0]).Get()
+				if err != nil {
+					log.Fatal("Invalid match key or failed TBA request.\n")
+					os.Exit(1)
+				}
 
-		event, err := tba.Event(ek).Get()
-		if err != nil {
-			log.Fatal(err)
-		}
+				DisplayMatch(match)
+				return nil
+			},
+		},
+		{
+			Name: "eventmatches",
+			Aliases: []string{"em"},
+			Usage: "Get data on the matches at an event",
+			Action: func(c *cli.Context) error {
+				var matches []tbago.Match
+				// TODO: Don't discard error
+				if len(c.Args()) > 1 {
+					matches, _ = tba.Event(c.Args()[0]).Matches().Get()
+				} else {
+					team, err := strconv.Atoi(c.Args()[1])
+					if err != nil {
+						log.Fatal("Invalid team key.")
+						os.Exit(1)
+					}
+					matches, _ = tba.Team(team).Event(c.Args()[0]).Matches().Get()
+				}
 
-		event.Address = strings.Replace(event.Address, "\n", ", ", -1)
+				if len(matches) == 0 {
+					log.Fatal("No matches found.\n")
+					os.Exit(1)
+				}
 
-		DisplayEvent(event)
-	} else if matchCommand.Parsed() {
-		mk := ""
-		if *matchKey != "" {
-			mk = *matchKey
-		} else {
-			if *matchLevel == "qm" {
-				mk = fmt.Sprintf("%d%s_%s%d", *matchYear, *matchEvent, *matchLevel, *matchNumber)
-			} else {
-				mk = fmt.Sprintf("%d%s_%s%dm%d", *matchYear, *matchEvent, *matchLevel, *matchNumber, *matchRound)
-			}
-		}
-
-		match, err := tba.Match(mk).Get()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		DisplayMatch(match)
-	} else if eventMatchesCommand.Parsed() {
-		ek := *eventMatchesKey
-		if _, err := strconv.Atoi(string((*eventMatchesKey)[0])); err != nil {
-			ek = fmt.Sprintf("%d%s", time.Now().Year(), *eventKey)
-		}
-
-		var matches []tbago.Match
-		// TODO: Don't discard error
-		if *eventMatchesTeam == 0 {
-			matches, _ = tba.Event(ek).Matches().Get()
-		} else {
-			// TODO: This functionality not yet supported by tbago
-			//matches, _ = tba.GetTeamEventMatches(*eventMatchesTeam, ek)
-		}
-
-		if len(matches) == 0 {
-			fmt.Fprintf(os.Stderr, "No matches found for event '%s'.\n", ek)
-			os.Exit(1)
-		}
-
-		for _, match := range matches {
-			DisplayMatch(match)
-		}
+				for _, match := range matches {
+					DisplayMatch(match)
+				}
+				return nil
+			},
+		},
 	}
+
+	app.Run(os.Args)
 }
 
 func ListInfo(header string, titles []string, data []interface{}) {
@@ -161,7 +148,7 @@ func DisplayTeam(team tbago.Team) {
 func DisplayEvent(event tbago.Event) {
 	header := fmt.Sprintf("%d %s (%s)", event.Year, event.Name, event.Key)
 	titles := []string{"Date", "Timezone", "Website", "Location", "Address", "District", "Type"}
-	data := []interface{}{fmt.Sprintf("%s - %s", event.StartDate, event.EndDate), event.Timezone, event.Website, event.LocationName, event.Address, event.District.DisplayName, fmt.Sprintf("%s (ID %d)", event.EventTypeString, event.EventType)}
+	data := []interface{}{fmt.Sprintf("%s - %s", event.StartDate, event.EndDate), event.Timezone, event.Website, event.LocationName, strings.Replace(event.Address, "\n", ", ", -1), event.District.DisplayName, fmt.Sprintf("%s (ID %d)", event.EventTypeString, event.EventType)}
 	ListInfo(header, titles, data)
 }
 
@@ -173,7 +160,7 @@ func DisplayMatch(match tbago.Match) {
 		header += fmt.Sprintf(", Round %d (%s)", match.SetNumber, match.Key)
 	}
 	titles := []string{"Date/Time", "Alliances"}
-	data := []interface{}{time.Unix(int64(match.Time), 0).Format("06/01/02 at 15:01"), ""}
+	data := []interface{}{time.Unix(match.Time, 0).Format("06/01/02 at 15:01"), ""}
 	ListInfo(header, titles, data)
 
 	if match.Alliances.Red.Score > match.Alliances.Blue.Score {
@@ -181,7 +168,7 @@ func DisplayMatch(match tbago.Match) {
 	} else {
 		r.Printf("\t    ")
 	}
-	for index, team := range match.Alliances.Red.Teams {
+	for index, team := range match.Alliances.Red.TeamKeys {
 		r.Printf("%s", team[3:len(team)])
 		if index < 2 {
 			r.Print(" | ")
@@ -193,7 +180,7 @@ func DisplayMatch(match tbago.Match) {
 	} else {
 		b.Printf("\t    ")
 	}
-	for index, team := range match.Alliances.Blue.Teams {
+	for index, team := range match.Alliances.Blue.TeamKeys {
 		b.Printf("%s", team[3:len(team)])
 		if index < 2 {
 			b.Print(" | ")
