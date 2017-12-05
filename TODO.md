@@ -1,7 +1,6 @@
 # TODOs for `frc`
 * Implement remaining available API functions -- fetch full team list, awards, etc.
 * Improve colors & formatting
-* Simplify printing process
 * Search for teams by name?
 * Show score breakdown for matches
 * Search for events to avoid having to memorize exact keys

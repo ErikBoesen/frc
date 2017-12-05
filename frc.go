@@ -14,7 +14,10 @@ import (
 	"github.com/frc1418/tbago"
 )
 
-const KEY = "EzMD6D489Qttrf80Efz0rF9j3zRVz0pWuE0jfc4RlrUNA1yHDoaow8EN4THKIiJt"
+const (
+	KEY = "EzMD6D489Qttrf80Efz0rF9j3zRVz0pWuE0jfc4RlrUNA1yHDoaow8EN4THKIiJt"
+	VERSION = "0.3.0"
+)
 
 // Used for printing in color
 var (
@@ -35,6 +38,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "frc"
 	app.Usage = "handle FRC-related tasks in the command line."
+	app.Version = VERSION;
 	app.EnableBashCompletion = true
 	app.Commands = []cli.Command{
 		{
