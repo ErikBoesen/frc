@@ -164,7 +164,7 @@ func DisplayMatch(match tbago.Match) {
 		header += fmt.Sprintf(", Round %d (%s)", match.SetNumber, match.Key)
 	}
 	titles := []string{"Date/Time", "Alliances"}
-	data := []interface{}{time.Unix(match.Time, 0).Format("06/01/02 at 15:01"), ""}
+	data := []interface{}{time.Unix(match.Time, 0).Format("06-01-02 at 15:01"), ""}
 	ListInfo(header, titles, data)
 
 	if match.Alliances.Red.Score > match.Alliances.Blue.Score {
