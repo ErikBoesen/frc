@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/urfave/cli"
 	"github.com/fatih/color"
-	"github.com/willf/pad"
 	"github.com/frc1418/tbago"
+	"github.com/urfave/cli"
+	"github.com/willf/pad"
 )
 
 const (
-	KEY = "EzMD6D489Qttrf80Efz0rF9j3zRVz0pWuE0jfc4RlrUNA1yHDoaow8EN4THKIiJt"
+	KEY     = "EzMD6D489Qttrf80Efz0rF9j3zRVz0pWuE0jfc4RlrUNA1yHDoaow8EN4THKIiJt"
 	VERSION = "0.3.0"
 )
 
@@ -38,13 +38,13 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "frc"
 	app.Usage = "handle FRC-related tasks in the command line."
-	app.Version = VERSION;
+	app.Version = VERSION
 	app.EnableBashCompletion = true
 	app.Commands = []cli.Command{
 		{
-			Name: "team",
+			Name:    "team",
 			Aliases: []string{"t"},
-			Usage: "Get data on a team",
+			Usage:   "Get data on a team",
 			Action: func(c *cli.Context) error {
 				if !c.Args().Present() {
 					log.Fatal("Usage: " + c.Command.Usage)
@@ -64,9 +64,9 @@ func main() {
 			},
 		},
 		{
-			Name: "event",
+			Name:    "event",
 			Aliases: []string{"e"},
-			Usage: "Get data on an event",
+			Usage:   "Get data on an event",
 			Action: func(c *cli.Context) error {
 				if !c.Args().Present() {
 					log.Fatal("Usage: " + c.Command.Usage)
@@ -84,9 +84,9 @@ func main() {
 			},
 		},
 		{
-			Name: "match",
+			Name:    "match",
 			Aliases: []string{"m"},
-			Usage: "Get data on a match",
+			Usage:   "Get data on a match",
 			Action: func(c *cli.Context) error {
 				match, err := tba.Match(c.Args()[0]).Get()
 				if err != nil {
@@ -99,9 +99,9 @@ func main() {
 			},
 		},
 		{
-			Name: "eventmatches",
+			Name:    "eventmatches",
 			Aliases: []string{"em"},
-			Usage: "Get data on the matches at an event",
+			Usage:   "Get data on the matches at an event",
 			Action: func(c *cli.Context) error {
 				var matches []tbago.Match
 				// TODO: Don't discard error
