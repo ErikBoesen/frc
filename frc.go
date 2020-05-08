@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	KEY     = "EzMD6D489Qttrf80Efz0rF9j3zRVz0pWuE0jfc4RlrUNA1yHDoaow8EN4THKIiJt"
-	VERSION = "0.3.0"
+	key     = "EzMD6D489Qttrf80Efz0rF9j3zRVz0pWuE0jfc4RlrUNA1yHDoaow8EN4THKIiJt"
+	version = "0.3.0"
 )
 
 // Used for printing in color
@@ -29,7 +29,7 @@ var (
 
 func main() {
 	// Initialize TBA parser
-	tba, err := tbago.New(KEY)
+	tba, err := tbago.New(key)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
@@ -38,7 +38,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "frc"
 	app.Usage = "handle FRC-related tasks in the command line."
-	app.Version = VERSION
+	app.Version = version
 	app.EnableBashCompletion = true
 	app.Commands = []cli.Command{
 		{
@@ -59,7 +59,7 @@ func main() {
 					log.Fatal("TBA request unsuccessful.\n")
 					os.Exit(1)
 				}
-				DisplayTeam(team)
+				displayTeam(team)
 				return nil
 			},
 		},
@@ -79,7 +79,7 @@ func main() {
 					os.Exit(1)
 				}
 
-				DisplayEvent(event)
+				displayEvent(event)
 				return nil
 			},
 		},
@@ -94,7 +94,7 @@ func main() {
 					os.Exit(1)
 				}
 
-				DisplayMatch(match)
+				displayMatch(match)
 				return nil
 			},
 		},
@@ -122,7 +122,7 @@ func main() {
 				}
 
 				for _, match := range matches {
-					DisplayMatch(match)
+					displayMatch(match)
 				}
 				return nil
 			},
@@ -132,7 +132,7 @@ func main() {
 	app.Run(os.Args)
 }
 
-func ListInfo(header string, titles []string, data []interface{}) {
+func listInfo(header string, titles []string, data []interface{}) {
 	fmt.Printf("\n    ")
 	c.Printf("%s:\n", header)
 	for i := range titles {
@@ -142,21 +142,21 @@ func ListInfo(header string, titles []string, data []interface{}) {
 	fmt.Println()
 }
 
-func DisplayTeam(team tbago.Team) {
+func displayTeam(team tbago.Team) {
 	header := fmt.Sprintf("Team %d", team.TeamNumber)
 	titles := []string{"Nickname", "Website", "Rookie", "Country", "Motto"}
 	data := []interface{}{team.Nickname, team.Website, team.RookieYear, team.Country, team.Motto}
-	ListInfo(header, titles, data)
+	listInfo(header, titles, data)
 }
 
-func DisplayEvent(event tbago.Event) {
+func displayEvent(event tbago.Event) {
 	header := fmt.Sprintf("%d %s (%s)", event.Year, event.Name, event.Key)
 	titles := []string{"Date", "Timezone", "Website", "Location", "Address", "District", "Type"}
 	data := []interface{}{fmt.Sprintf("%s - %s", event.StartDate, event.EndDate), event.Timezone, event.Website, event.LocationName, strings.Replace(event.Address, "\n", ", ", -1), event.District.DisplayName, fmt.Sprintf("%s (ID %d)", event.EventTypeString, event.EventType)}
-	ListInfo(header, titles, data)
+	listInfo(header, titles, data)
 }
 
-func DisplayMatch(match tbago.Match) {
+func displayMatch(match tbago.Match) {
 	header := fmt.Sprintf("%s %s #%d", strings.ToUpper(match.EventKey), strings.ToUpper(match.CompLevel), match.MatchNumber)
 	if match.CompLevel == "qm" {
 		header += fmt.Sprintf(" (%s)", match.Key)
@@ -165,7 +165,7 @@ func DisplayMatch(match tbago.Match) {
 	}
 	titles := []string{"Date/Time", "Alliances"}
 	data := []interface{}{time.Unix(match.Time, 0).Format("06-01-02 at 15:01"), ""}
-	ListInfo(header, titles, data)
+	listInfo(header, titles, data)
 
 	if match.Alliances.Red.Score > match.Alliances.Blue.Score {
 		r.Printf("\t 🏆  ")
@@ -173,7 +173,7 @@ func DisplayMatch(match tbago.Match) {
 		r.Printf("\t    ")
 	}
 	for index, team := range match.Alliances.Red.TeamKeys {
-		r.Printf("%s", team[3:len(team)])
+		r.Printf("%s", team[3:])
 		if index < 2 {
 			r.Print(" | ")
 		}
@@ -185,7 +185,7 @@ func DisplayMatch(match tbago.Match) {
 		b.Printf("\t    ")
 	}
 	for index, team := range match.Alliances.Blue.TeamKeys {
-		b.Printf("%s", team[3:len(team)])
+		b.Printf("%s", team[3:])
 		if index < 2 {
 			b.Print(" | ")
 		}
